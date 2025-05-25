@@ -1,0 +1,9 @@
+# Build artifacts
+.pio
+
+# IDE configurations files
+.vscode
+
+# keywordSecret files
+keywordManagement.h
+

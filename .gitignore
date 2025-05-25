@@ -5,5 +5,5 @@
 .vscode
 
 # keywordSecret files
-keywordManagement.h
+KeywordManagement.h
 

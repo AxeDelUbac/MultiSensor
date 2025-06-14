@@ -31,3 +31,23 @@ void informationDisplay::displayLuminosity(int luminosityValue) {
     this->display(luminosityValue);
     this->display(" lux");
 }
+
+void informationDisplay::displayTemperature(int temperatureValue) {
+    this->display(temperatureValue);
+    this->display(" C");
+}
+
+void informationDisplay::displayHumidity(int humidityValue) {
+    this->display(humidityValue);
+    this->display(" %");
+}
+
+void informationDisplay::displayPressure(int PressureValue) {
+    this->display(PressureValue);
+    this->display(" hPa");
+}
+
+void informationDisplay::displayGas(int GasValue) {
+    this->display(GasValue);
+    this->display(" eC02");
+}

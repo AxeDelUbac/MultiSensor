@@ -14,6 +14,8 @@ public:
     void displayLuminosity(int luminosityValue);
     void displayTemperature(int temperatureValue);
     void displayHumidity(int humidityValue);
+    void displayPressure(int presureValue);
+    void displayGas(int GasValue);
 
 
 private:

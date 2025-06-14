@@ -11,16 +11,21 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME680.h>
+
 // include of the project files
-#include "luminositySensor.h"
-#include "WiFiManagement.h"
-#include "MQTTManagement.h"
-#include "informationDisplay.h"
+#include "sensorManagement/luminositySensor.h"
+#include "sensorManagement/environmentalSensor.h"
+#include "wirelessManagement/WiFiManagement.h"
+#include "wirelessManagement/MQTTManagement.h"
+#include "userInterface/informationDisplay.h"
+
 
 void WiFiTask(void *pvParameters);
 void MQTTTask(void *pvParameters);
-void luminosityTask(void *pvParameters);
-void Task2(void *pvParameters);
+void SensorTask(void *pvParameters);
+void DebugTask(void *pvParameters);
 void displayInformationTask(void *pvParameters);
 
 #endif

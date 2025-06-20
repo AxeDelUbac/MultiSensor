@@ -15,17 +15,20 @@
 #include <Adafruit_BME680.h>
 
 // include of the project files
-#include "sensorManagement/luminositySensor.h"
 #include "sensorManagement/environmentalSensor.h"
 #include "wirelessManagement/WiFiManagement.h"
 #include "wirelessManagement/MQTTManagement.h"
 #include "userInterface/informationDisplay.h"
 
+void taskCreation(void);
 
 void WiFiTask(void *pvParameters);
 void MQTTTask(void *pvParameters);
 void SensorTask(void *pvParameters);
 void DebugTask(void *pvParameters);
 void displayInformationTask(void *pvParameters);
+
+const int iSizeSensorValueBuffer = 5;
+float fRetrieveSensorValueBuffer[iSizeSensorValueBuffer] = {0};
 
 #endif

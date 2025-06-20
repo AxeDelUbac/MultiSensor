@@ -3,23 +3,27 @@
 
 #include <LiquidCrystal_I2C.h>
 
-class informationDisplay {
+class informationDisplay
+{
 public:
     informationDisplay();
     void begin();
     void clear();
     void setCursor(int col, int row);
-    void display(int value);
-    void display(const String& text);
-    void displayLuminosity(int luminosityValue);
-    void displayTemperature(int temperatureValue);
-    void displayHumidity(int humidityValue);
-    void displayPressure(int presureValue);
-    void displayGas(int GasValue);
 
+    void display(int value);
+    void display(const String &text);
+
+    void displayLuminosity(float fLuminosityValue);
+    void displayTemperature(float fTemperatureValue);
+    void displayHumidity(float fHumidityValue);
+    void displayPressure(float fPresureValue);
+    void displayGas(float GasValue);
+
+    void displaySensor(float fTemperatureValue, float fHumidityValue, float fPresureValue, float fIAQValue);
 
 private:
     LiquidCrystal_I2C lcd;
 };
 
-# endif
+#endif

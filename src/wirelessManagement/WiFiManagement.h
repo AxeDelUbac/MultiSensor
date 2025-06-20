@@ -6,6 +6,10 @@
 
 #include "KeywordManagement.h"
 
-void Wificonnect(void);
+class WiFiManagement
+{
+public:
+    void networkConnection(void);
+};
 
 #endif

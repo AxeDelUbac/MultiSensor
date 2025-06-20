@@ -3,6 +3,7 @@
 
 # IDE configurations files
 .vscode
+.idea
 
 # keywordSecret files
 KeywordManagement.h

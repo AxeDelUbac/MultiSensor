@@ -1,119 +1,132 @@
 #include "main.h"
 
-luminositySensor luminosity(4);
 informationDisplay lcdDisplay;
 Adafruit_BME680 bme(&Wire);
-environmentalSensor environmentalSensor(&bme);
+environmentalSensor EnvironmentalSensor(&bme);
+WiFiManagement oWIFIManagement;
+MQTTManagement oMQTTManagement;
 
-int luminosityValue;
-int temperatureValue;
-int humidityValue;
-int pressureValue;
-int gasValue;
+/****
+ * @brief Main setup function.
+ *
+ * Initializes serial communication, I2C, sensors, LCD, and creates FreeRTOS tasks.
+ ****/
+void setup()
+{
 
-void setup() {
-  // put your setup code here, to run once:
   Serial.begin(115200);
-  Wire.begin(6,7);
+  Wire.begin(6, 7);
 
-  environmentalSensor.begin();
-  luminosity.begin();
+  EnvironmentalSensor.begin();
   lcdDisplay.begin();
 
-  xTaskCreate(
-    WiFiTask,"TaskWiFi",4096,NULL,1,NULL
-  );
-    xTaskCreate(
-    MQTTTask,"TaskMQTT",4096,NULL,1,NULL
-  );
-  xTaskCreate(
-    SensorTask,"SensorTask",2048,NULL,1,NULL
-  );
-  xTaskCreate(
-    DebugTask,"DebugTask",2048,NULL,1,NULL
-  );
-  xTaskCreate(
-    displayInformationTask,"DisplayInformationTask",4096,NULL,1,NULL
-  );
-
+  taskCreation();
 }
 
+/****
+ * @brief Creates all FreeRTOS tasks for the application.
+ ****/
+void taskCreation(void)
+{
+  xTaskCreate(
+      WiFiTask, "TaskWiFi", 4096, NULL, 1, NULL);
+  xTaskCreate(
+      MQTTTask, "TaskMQTT", 4096, NULL, 1, NULL);
+  xTaskCreate(
+      SensorTask, "SensorTask", 4096, NULL, 1, NULL);
+  xTaskCreate(
+      DebugTask, "DebugTask", 4096, NULL, 1, NULL);
+  xTaskCreate(
+      displayInformationTask, "DisplayInformationTask", 4096, NULL, 1, NULL);
+}
+
+/****
+ * @brief Main loop (unused with FreeRTOS tasks).
+ ****/
 void loop() {}
 
-void DebugTask(void *pvParameters) {
-  while (true) {
+/****
+ * @brief Task for debugging: prints sensor values to serial output.
+ ****/
+void DebugTask(void *pvParameters)
+{
+  for (;;)
+  {
 
     Serial.print("Temperature: ");
-    Serial.print(temperatureValue);
+    Serial.print(fRetrieveSensorValueBuffer[0]);
     Serial.print(" C, Humidity: ");
-    Serial.print(humidityValue);
+    Serial.print(fRetrieveSensorValueBuffer[1]);
     Serial.print(" %, Pressure: ");
-    Serial.print(pressureValue);
-    Serial.print(" hPa, Gas: ");
-    Serial.print(gasValue);
-    Serial.println(" eC02");
+    Serial.print(fRetrieveSensorValueBuffer[2]);
+    Serial.print("IAQ Value: ");
+    Serial.print(fRetrieveSensorValueBuffer[3]);
 
-    vTaskDelay(pdMS_TO_TICKS(10500));  // Attendre 1,5 seconde
+    vTaskDelay(pdMS_TO_TICKS(10000)); // Attendre 1,5 seconde
   }
 }
 
-void SensorTask(void *pvParameters) {
-  while (true) {
+/****
+ * @brief Task for reading sensor values and updating the buffer.
+ ****/
+void SensorTask(void *pvParameters)
+{
+  Serial.println("SensorTask start");
+  for (;;)
+  {
 
-    temperatureValue = environmentalSensor.readTemperatureValue();
-    humidityValue = environmentalSensor.readHumidityValue();
-    pressureValue = environmentalSensor.readPressureValue();
-    gasValue = environmentalSensor.readGasValue();
+    fRetrieveSensorValueBuffer[0] = EnvironmentalSensor.readTemperatureValue();
+    fRetrieveSensorValueBuffer[1] = EnvironmentalSensor.readHumidityValue();
+    fRetrieveSensorValueBuffer[2] = EnvironmentalSensor.readPressureValue();
+    fRetrieveSensorValueBuffer[3] = EnvironmentalSensor.readGasValue();
 
-    vTaskDelay(pdMS_TO_TICKS(5000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
 
-void WiFiTask(void* parameter) {
-  for (;;) {
-    Wificonnect();
+/****
+ * @brief Task for managing WiFi connection.
+ ****/
+void WiFiTask(void *parameter)
+{
+  for (;;)
+  {
+
+    oWIFIManagement.networkConnection();
+
     vTaskDelay(pdMS_TO_TICKS(10000));
   }
 }
 
-void MQTTTask(void* parameter) {
-  for (;;) {
+/****
+ * @brief Task for sending sensor data via MQTT.
+ ****/
+void MQTTTask(void *parameter)
+{
+  for (;;)
+  {
 
-    MQTTconnect();
+    oMQTTManagement.sendSerialisedData();
+
     vTaskDelay(pdMS_TO_TICKS(10000));
   }
 }
 
-const int NB_VALEURS = 3;
-int bufferIndex = 0;
-
-void displayInformationTask(void* parameter) {
-  for (;;) {
+/****
+ * @brief Task for displaying sensor information on the LCD.
+ ****/
+void displayInformationTask(void *parameter)
+{
+  for (;;)
+  {
 
     lcdDisplay.clear();
+
     lcdDisplay.setCursor(0, 0);
     lcdDisplay.display("The multisensor");
 
-    switch (bufferIndex) {
-      case 0:
-        lcdDisplay.setCursor(0,1);
-        lcdDisplay.displayTemperature(temperatureValue);
-        lcdDisplay.setCursor(8,1);
-        lcdDisplay.displayHumidity(humidityValue);
-        break;
-      case 1:
-        lcdDisplay.setCursor(0,1);
-        lcdDisplay.displayPressure(pressureValue);
-        break;
-      case 2:
-        lcdDisplay.setCursor(0,1);
-        lcdDisplay.displayGas(gasValue);
-        break;
-    }
-
-    bufferIndex = (bufferIndex + 1) % NB_VALEURS; // Incrémente et boucle
-
-  Serial.println();
+    lcdDisplay.setCursor(0, 1);
+    lcdDisplay.displaySensor(fRetrieveSensorValueBuffer[0], fRetrieveSensorValueBuffer[1], fRetrieveSensorValueBuffer[2], fRetrieveSensorValueBuffer[3]);
 
     vTaskDelay(pdMS_TO_TICKS(5000));
   }

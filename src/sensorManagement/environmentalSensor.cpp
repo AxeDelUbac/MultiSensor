@@ -126,6 +126,7 @@ float environmentalSensor::readHumidityValue(void)
 float environmentalSensor::readPressureValue(void)
 {
     fLastValuePressure = bme->readPressure();
+    fLastValuePressure = fLastValuePressure / 100.0f; // Convertion in hPa
     return movingAverage(fPressureValueBuffer, fLastValuePressure);
 }
 

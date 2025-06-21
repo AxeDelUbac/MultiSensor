@@ -50,7 +50,7 @@ void MQTTManagement::jsonDataSerialisation(char *cSerialisedData, size_t cSerial
   oJsonData["temperature"] = fRetrieveSensorValueBuffer[0];
   oJsonData["humidity"] = fRetrieveSensorValueBuffer[1];
   oJsonData["pressure"] = fRetrieveSensorValueBuffer[2];
-  oJsonData["Indoor Air Quality "] = fRetrieveSensorValueBuffer[3];
+  oJsonData["IndoorAirQuality"] = fRetrieveSensorValueBuffer[3];
   oJsonData["luminosity"] = fRetrieveSensorValueBuffer[4];
 
   serializeJson(oJsonData, cSerialisedData, cSerialisedDataBufferSize);

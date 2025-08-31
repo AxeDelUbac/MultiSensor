@@ -1,6 +1,6 @@
 # MultiSensor
 
-This is a measurement station project based on an ESP32-C6 microcontroller.
+This is a measurement station project based on an `ESP32-C6` microcontroller.
 
 ## Project Structure and Code Organization
 

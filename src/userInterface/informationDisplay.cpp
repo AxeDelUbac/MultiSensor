@@ -203,13 +203,13 @@ void informationDisplay_displaySensor(float fSensorValue[5])
         break;
     case 1:
         informationDisplay_setCursor(0, 1);
-        informationDisplay_displayLuminosity(fSensorValue[2]);
+        informationDisplay_displayPressure(fSensorValue[2]);
         informationDisplay_setCursor(8, 1);
-        informationDisplay_displayPressure(fSensorValue[3]);
+        informationDisplay_displayGas(fSensorValue[3]);
         break;
     case 2:
         informationDisplay_setCursor(0, 1);
-        informationDisplay_displayGas(fSensorValue[4]);
+        informationDisplay_displayLuminosity(fSensorValue[4]);
         break;
     }
 

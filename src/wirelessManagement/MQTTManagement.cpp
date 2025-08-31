@@ -5,15 +5,20 @@
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+char cSerialisedData[256] = {0};
+char cThresholdSerialisedData[64] = {0};
+
 extern float fRetrieveSensorValueBuffer[5];
 
-/****
+/**
  * @brief Connects to the MQTT broker.
  *
  * Sets the MQTT server and attempts to connect using the provided credentials.
- * Retries the connection if it fails.
- ****/
-void MQTTManagement::brokerConnection(void)
+ * Retries the connection if it fails until a connection is established.
+ *
+ * @note Prints connection status to the serial port.
+ */
+void MQTTManagement_brokerConnection(void)
 {
   client.setServer(MQTT_SERVEUR_IP, MQTT_SERVEUR_PORT);
 
@@ -34,17 +39,16 @@ void MQTTManagement::brokerConnection(void)
   }
 }
 
-/****
+/**
  * @brief Serializes sensor data into a JSON string.
  *
  * Fills the provided buffer with a JSON string containing temperature, humidity, pressure, IAQ, and luminosity.
  *
  * @param cSerialisedData Buffer to store the serialized JSON string.
  * @param cSerialisedDataBufferSize Size of the buffer.
- ****/
-void MQTTManagement::jsonDataSerialisation(char *cSerialisedData, size_t cSerialisedDataBufferSize)
+ */
+void MQTTManagement_jsonDataSerialisation(char *cSerialisedData, size_t cSerialisedDataBufferSize)
 {
-
   JsonDocument oJsonData;
 
   oJsonData["temperature"] = fRetrieveSensorValueBuffer[0];
@@ -56,30 +60,80 @@ void MQTTManagement::jsonDataSerialisation(char *cSerialisedData, size_t cSerial
   serializeJson(oJsonData, cSerialisedData, cSerialisedDataBufferSize);
 }
 
-/****
+/**
+ * @brief Serializes threshold alert data into a JSON string.
+ *
+ * Fills the provided buffer with a JSON string containing the sensor type and the threshold value that was exceeded.
+ *
+ * @param sensorType The type of sensor for which the threshold was exceeded.
+ * @param fThresholdSensorValue The value of the sensor that exceeded the threshold.
+ * @param cThresholdSerialisedData Buffer to store the serialized JSON string.
+ * @param cThresholdSerialisedDataBufferSize Size of the buffer.
+ */
+void MQTTManagement_jsonThresholdDataSerialisation(eSensorType sensorType, float fThresholdSensorValue, char *cThresholdSerialisedData, size_t cThresholdSerialisedDataBufferSize)
+{
+  JsonDocument oJsonThresholdData;
+
+  oJsonThresholdData["sensorType"] = sensorTypeToString(sensorType); 
+  oJsonThresholdData["thresholdSensorValue"] = fThresholdSensorValue;
+
+  serializeJson(oJsonThresholdData, cThresholdSerialisedData, cThresholdSerialisedDataBufferSize);
+}
+
+/**
  * @brief Sends the serialized sensor data to the MQTT broker.
  *
- * Ensures the client is connected, serializes the data, and publishes it to the MQTT topic.
- ****/
-void MQTTManagement::sendSerialisedData(void)
+ * Ensures the client is connected, serializes the data, and publishes it to the MQTT topic "Multisensor".
+ *
+ * @note Calls MQTTManagement_brokerConnection if not already connected.
+ */
+void MQTTManagement_sendSerialisedData(void)
 {
   if (!client.connected())
   {
-    brokerConnection();
+    MQTTManagement_brokerConnection();
   }
 
   client.loop();
 
-  jsonDataSerialisation(cSerialisedData, sizeof(cSerialisedData));
+  MQTTManagement_jsonDataSerialisation(cSerialisedData, sizeof(cSerialisedData));
 
   client.publish("Multisensor", cSerialisedData);
 
-  Serial.print("MQTT Messages sent: ");
-  Serial.println(cSerialisedData);
+  // Serial.print("MQTT Messages sent: ");
+  // Serial.println(cSerialisedData);
+}
 
-  // Print the minimum remaining stack space for the current MQTT task (for stack monitoring)
-  // UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(NULL);
-  // Serial.printf("Stack restante: %u mots pour le MQTT\n", highWaterMark);
+/**
+ * @brief Publishes a threshold alert message to the MQTT broker.
+ *
+ * Publishes a JSON message to the topic "Multisensor/threshold/<sensorType>" when a sensor value exceeds its threshold.
+ *
+ * @param sensorType The type of sensor for which the threshold was exceeded.
+ * @param fSensorValue The value of the sensor that exceeded the threshold.
+ */
+void MQTTManagement_ThresholdReached(eSensorType sensorType, float fSensorValue)
+{
+
+  char cThresholdTopic[64] = {0};
+  snprintf(cThresholdTopic, sizeof(cThresholdTopic), "Multisensor/threshold/%s", sensorTypeToString(sensorType));
+
+  MQTTManagement_jsonThresholdDataSerialisation(sensorType, fSensorValue, cThresholdSerialisedData, sizeof(cThresholdSerialisedData));
+
+  client.publish(cThresholdTopic, cThresholdSerialisedData);
+
+  // Serial.print("MQTT Threshold Messages sent: ");
+  // Serial.println(cThresholdSerialisedData);
+}
+
+/**
+ * @brief Returns the current MQTT client connection status.
+ *
+ * @return The status code from PubSubClient::state().
+ */
+int MQTTManagement_getMQTTStatus(void)
+{
+    return client.state();
 }
 
 /****

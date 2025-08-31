@@ -1,6 +1,15 @@
 #include "WiFiManagement.h"
 
-void WiFiManagement::networkConnection(void)
+/**
+ * @brief Connects to the WiFi network.
+ *
+ * Attempts to connect to the WiFi network using the provided SSID and password.
+ * Retries the connection up to 20 times if not immediately successful.
+ * Prints connection status and local IP address to the serial port.
+ *
+ * @note If connection fails after retries, disconnects WiFi cleanly.
+ */
+void WiFiManagement_networkConnection(void)
 {
   if (WiFi.status() != WL_CONNECTED)
   {
@@ -31,3 +40,17 @@ void WiFiManagement::networkConnection(void)
   // UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(NULL);
   // Serial.printf("Stack restante: %u mots pour le WiFi\n", highWaterMark);
 }
+
+/**
+ * @brief Returns the current WiFi connection status.
+ *
+ * @return The status code from WiFi.status().
+ */
+int WiFiManagement_getWiFiStatus(void)
+{
+  return WiFi.status();
+}
+
+/****
+ * END OF FILE
+ ****/

@@ -5,22 +5,16 @@
 #include <Arduino.h>
 #include <Adafruit_BME680.h>
 
-class environmentalSensor {
-public:
-    environmentalSensor(Adafruit_BME680* bme) : bme(bme) {}
+#include "sensorManagement.h"
+#include "projectDefs.h"
 
-    void begin();
+void environmentalSensor_begin();
 
-    float movingAverage(float* fSensorBuffer, float fNewValue);
-    float IAQManagement(float fResistance);
+float environmentalSensor_IAQManagement(float fResistance);
 
-    float readTemperatureValue(void);
-    float readHumidityValue(void);
-    float readPressureValue(void);
-    float readGasValue(void);
-
-private:
-    Adafruit_BME680* bme;
-};
+float environmentalSensor_readTemperatureValue(void);
+float environmentalSensor_readHumidityValue(void);
+float environmentalSensor_readPressureValue(void);
+float environmentalSensor_readGasValue(void);
 
 #endif // ENVIRONMENTAL_SENSOR_H

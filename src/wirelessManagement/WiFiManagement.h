@@ -6,10 +6,7 @@
 
 #include "KeywordManagement.h"
 
-class WiFiManagement
-{
-public:
-    void networkConnection(void);
-};
+    void WiFiManagement_networkConnection(void);
+    int WiFiManagement_getWiFiStatus(void);
 
-#endif
+#endif // WIFI_MANAGEMENT_H

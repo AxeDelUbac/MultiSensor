@@ -6,15 +6,14 @@
 #include <PubSubClient.h>
 
 #include "KeywordManagement.h"
+#include "sensorManagement/sensorManagement.h"
 
-class MQTTManagement
-{
-public:
-    void brokerConnection(void);
-    void jsonDataSerialisation(char *cSerialisedData, size_t cSerialisedDataBufferSize);
-    void sendSerialisedData(void);
+    void MQTTManagement_brokerConnection(void);
+    void MQTTManagement_jsonDataSerialisation(char *cSerialisedData, size_t cSerialisedDataBufferSize);
+    void MQTTManagement_jsonThresholdDataSerialisation(eSensorType sensorType,float fThresholdSensorValue, char *cSerialisedData, size_t cSerialisedDataBufferSize); 
+    void MQTTManagement_sendSerialisedData(void);
+    void MQTTManagement_ThresholdReached(eSensorType sensorType, float fSensorValue);
 
-    char cSerialisedData[256] = {0};
-};
+    int MQTTManagement_getMQTTStatus(void);
 
-#endif
+#endif // MQTT_MANAGEMENT_H

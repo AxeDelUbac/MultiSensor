@@ -1,31 +1,30 @@
 #include "main.h"
 
-informationDisplay lcdDisplay;
-Adafruit_BME680 bme(&Wire);
-environmentalSensor EnvironmentalSensor(&bme);
-WiFiManagement oWIFIManagement;
-MQTTManagement oMQTTManagement;
-
-/****
+/**
  * @brief Main setup function.
  *
- * Initializes serial communication, I2C, sensors, LCD, and creates FreeRTOS tasks.
- ****/
+ * Initializes serial communication, I2C, sensors, LCD, and creates all FreeRTOS tasks.
+ */
 void setup()
 {
 
   Serial.begin(115200);
   Wire.begin(6, 7);
 
-  EnvironmentalSensor.begin();
-  lcdDisplay.begin();
+  Serial.println("Scan complete.");
+
+  environmentalSensor_begin();
+  lightSensor_begin();
+  informationDisplay_begin();
 
   taskCreation();
 }
 
-/****
+/**
  * @brief Creates all FreeRTOS tasks for the application.
- ****/
+ *
+ * Creates tasks for WiFi, MQTT, sensor reading, debugging, and LCD display.
+ */
 void taskCreation(void)
 {
   xTaskCreate(
@@ -40,16 +39,25 @@ void taskCreation(void)
       displayInformationTask, "DisplayInformationTask", 4096, NULL, 1, NULL);
 }
 
-/****
+/**
  * @brief Main loop (unused with FreeRTOS tasks).
- ****/
+ *
+ * Required by Arduino framework, but not used since all logic is handled by FreeRTOS tasks.
+ */
 void loop() {}
 
-/****
+/**
  * @brief Task for debugging: prints sensor values to serial output.
- ****/
+ *
+ * Prints all sensor values to the serial monitor every 10 seconds.
+ *
+ * @param pvParameters Unused FreeRTOS task parameter.
+ */
 void DebugTask(void *pvParameters)
 {
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t xFrequency = pdMS_TO_TICKS(10000);
+
   for (;;)
   {
 
@@ -57,77 +65,109 @@ void DebugTask(void *pvParameters)
     Serial.print(fRetrieveSensorValueBuffer[0]);
     Serial.print(" C, Humidity: ");
     Serial.print(fRetrieveSensorValueBuffer[1]);
-    Serial.print(" %, Pressure: ");
+    Serial.print(" Pressure: ");
     Serial.print(fRetrieveSensorValueBuffer[2]);
-    Serial.print("IAQ Value: ");
+    Serial.print(" hPa, IAQ : ");
     Serial.print(fRetrieveSensorValueBuffer[3]);
+    Serial.print(" ,Light: ");
+    Serial.print(fRetrieveSensorValueBuffer[4]);
+    Serial.print(" Lux");
 
-    vTaskDelay(pdMS_TO_TICKS(10000)); // Attendre 1,5 seconde
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 
-/****
+/**
  * @brief Task for reading sensor values and updating the buffer.
- ****/
+ *
+ * Reads all sensors, updates the global buffer, and checks thresholds every 5 minutes (300 seconds).
+ *
+ * @param pvParameters Unused FreeRTOS task parameter.
+ */
 void SensorTask(void *pvParameters)
 {
-  Serial.println("SensorTask start");
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t xFrequency = pdMS_TO_TICKS(300000);
+
   for (;;)
   {
+    fRetrieveSensorValueBuffer[0] = environmentalSensor_readTemperatureValue();
+    fRetrieveSensorValueBuffer[1] = environmentalSensor_readHumidityValue();
+    fRetrieveSensorValueBuffer[2] = environmentalSensor_readPressureValue();
+    fRetrieveSensorValueBuffer[3] = environmentalSensor_readGasValue();
+    fRetrieveSensorValueBuffer[4] = lightSensor_readLuminosityValue();
 
-    fRetrieveSensorValueBuffer[0] = EnvironmentalSensor.readTemperatureValue();
-    fRetrieveSensorValueBuffer[1] = EnvironmentalSensor.readHumidityValue();
-    fRetrieveSensorValueBuffer[2] = EnvironmentalSensor.readPressureValue();
-    fRetrieveSensorValueBuffer[3] = EnvironmentalSensor.readGasValue();
-
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 
-/****
+/**
  * @brief Task for managing WiFi connection.
- ****/
+ *
+ * Periodically checks and manages the WiFi connection every 2 minutes and 30 seconds (150 seconds).
+ *
+ * @param parameter Unused FreeRTOS task parameter.
+ */
 void WiFiTask(void *parameter)
 {
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t xFrequency = pdMS_TO_TICKS(150000);
+
   for (;;)
   {
 
-    oWIFIManagement.networkConnection();
+    WiFiManagement_networkConnection();
 
-    vTaskDelay(pdMS_TO_TICKS(10000));
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 
-/****
+/**
  * @brief Task for sending sensor data via MQTT.
- ****/
+ *
+ * Serializes and publishes sensor data to the MQTT broker every 30 minutes (1800 seconds).
+ *
+ * @param parameter Unused FreeRTOS task parameter.
+ */
 void MQTTTask(void *parameter)
 {
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t xFrequency = pdMS_TO_TICKS(1800000);
+
   for (;;)
   {
 
-    oMQTTManagement.sendSerialisedData();
+    MQTTManagement_sendSerialisedData();
 
-    vTaskDelay(pdMS_TO_TICKS(10000));
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+  }
+}
+
+/**
+ * @brief Task for displaying sensor information on the LCD.
+ *
+ * Clears the LCD, displays main information and sensor values every 5 seconds.
+ *
+ * @param parameter Unused FreeRTOS task parameter.
+ */
+void displayInformationTask(void *parameter)
+{
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t xFrequency = pdMS_TO_TICKS(5000);
+
+  for (;;)
+  {
+
+    informationDisplay_clear();
+
+    informationDisplay_displayMainInformation();
+
+    informationDisplay_displaySensor(fRetrieveSensorValueBuffer);
+
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 
 /****
- * @brief Task for displaying sensor information on the LCD.
+ * END OF FILE
  ****/
-void displayInformationTask(void *parameter)
-{
-  for (;;)
-  {
-
-    lcdDisplay.clear();
-
-    lcdDisplay.setCursor(0, 0);
-    lcdDisplay.display("The multisensor");
-
-    lcdDisplay.setCursor(0, 1);
-    lcdDisplay.displaySensor(fRetrieveSensorValueBuffer[0], fRetrieveSensorValueBuffer[1], fRetrieveSensorValueBuffer[2], fRetrieveSensorValueBuffer[3]);
-
-    vTaskDelay(pdMS_TO_TICKS(5000));
-  }
-}

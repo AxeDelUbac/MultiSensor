@@ -1,0 +1,80 @@
+@startuml
+' C++ file interactions diagram (grouped by directory)
+left to right direction
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam ArrowColor Black
+skinparam ArrowThickness 2
+skinparam classFontColor Black
+skinparam classFontSize 14
+skinparam classBorderColor Black
+skinparam classBackgroundColor White
+skinparam packageTitleFontSize 16
+skinparam packageBorderColor Gray
+skinparam packageBackgroundColor #F8F8F8
+
+class main_cpp as "main.cpp"
+class vspacer1 << (S,#FFFFFF) >>
+hide vspacer1
+class spacer1 << (S,#FFFFFF) >>
+class spacer2 << (S,#FFFFFF) >>
+class spacer3 << (S,#FFFFFF) >>
+hide spacer1
+hide spacer2
+hide spacer3
+
+
+
+class spacerA << (S,#FFFFFF) >>
+hide spacerA
+
+package "sensorManagement" {
+  vspacer1 -[hidden]-> environmentalSensor_cpp
+  vspacer1 -[hidden]-> lightSensor_cpp
+  vspacer1 -[hidden]-> sensorManagement_cpp
+  class environmentalSensor_cpp as "environmentalSensor.cpp"
+  class lightSensor_cpp as "lightSensor.cpp"
+  class sensorManagement_cpp as "sensorManagement.cpp"
+}
+
+package "wirelessManagement" {
+  class WiFiManagement_cpp as "WiFiManagement.cpp"
+  class MQTTManagement_cpp as "MQTTManagement.cpp"
+}
+
+package "userInterface" {
+  class informationDisplay_cpp as "informationDisplay.cpp"
+}
+
+sensorManagement_cpp -[hidden]-> spacerA
+spacerA -[hidden]-> informationDisplay_cpp
+
+"main_cpp" -[hidden]-> spacer1
+spacer1 -[hidden]-> environmentalSensor_cpp
+sensorManagement_cpp -[hidden]-> spacer2
+spacer2 -[hidden]-> WiFiManagement_cpp
+MQTTManagement_cpp -[hidden]-> spacer3
+spacer3 -[hidden]-> sensorManagement_cpp
+
+' Main interactions
+main_cpp --> environmentalSensor_cpp : create task
+main_cpp --> lightSensor_cpp : create task
+main_cpp --> sensorManagement_cpp : init sensors
+main_cpp --> WiFiManagement_cpp : init WiFi
+main_cpp --> MQTTManagement_cpp : init MQTT
+main_cpp --> informationDisplay_cpp : create display
+
+environmentalSensor_cpp --> sensorManagement_cpp : manage data
+lightSensor_cpp --> sensorManagement_cpp : manage data
+sensorManagement_cpp --> MQTTManagement_cpp : alert/data exchange
+sensorManagement_cpp --> informationDisplay_cpp : update display
+
+WiFiManagement_cpp --> MQTTManagement_cpp : net status
+MQTTManagement_cpp --> informationDisplay_cpp : notify
+
+informationDisplay_cpp --> WiFiManagement_cpp : display WiFi status
+informationDisplay_cpp --> MQTTManagement_cpp : display MQTT status
+informationDisplay_cpp --> sensorManagement_cpp : display sensors values
+
+@enduml

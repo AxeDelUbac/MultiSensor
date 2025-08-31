@@ -1,21 +1,34 @@
 #include "informationDisplay.h"
 
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+int iThresholdReached = 0;
+int iDisplayNameCounter = 0;
+
+int iWiFiStatus = 0;
+int iMqttStatus = 0;
+
 /****
  * @brief informationDisplay class constructor.
  *
  * Initializes the LCD object with I2C address 0x27 and a 16x2 screen.
  ****/
-informationDisplay::informationDisplay()
-    : lcd(0x27, 16, 2)
-{
-}
+// informationDisplay_informationDisplay()
+//     : lcd(0x27, 16, 2)
+// {
+// }
 
 /****
  * @brief Initializes the LCD display.
  *
  * Initializes, turns on the backlight, and clears the LCD screen.
  ****/
-void informationDisplay::begin()
+/**
+ * @brief Initializes the LCD display.
+ *
+ * Initializes, turns on the backlight, and clears the LCD screen.
+ */
+void informationDisplay_begin()
 {
     lcd.init();
     lcd.backlight();
@@ -25,7 +38,10 @@ void informationDisplay::begin()
 /****
  * @brief Clears the LCD screen.
  ****/
-void informationDisplay::clear()
+/**
+ * @brief Clears the LCD screen.
+ */
+void informationDisplay_clear()
 {
     lcd.clear();
 }
@@ -36,7 +52,13 @@ void informationDisplay::clear()
  * @param col Column (0-15)
  * @param row Row (0-1)
  ****/
-void informationDisplay::setCursor(int col, int row)
+/**
+ * @brief Sets the cursor position on the LCD screen.
+ *
+ * @param col Column (0-15)
+ * @param row Row (0-1)
+ */
+void informationDisplay_setCursor(int col, int row)
 {
     lcd.setCursor(col, row);
 }
@@ -46,7 +68,12 @@ void informationDisplay::setCursor(int col, int row)
  *
  * @param value Integer value to display.
  ****/
-void informationDisplay::display(int value)
+/**
+ * @brief Displays an integer value on the LCD.
+ *
+ * @param value Integer value to display.
+ */
+void informationDisplay_display(int value)
 {
     lcd.print(value);
 }
@@ -56,20 +83,14 @@ void informationDisplay::display(int value)
  *
  * @param text Text to display.
  ****/
-void informationDisplay::display(const String &text)
+/**
+ * @brief Displays a text string on the LCD.
+ *
+ * @param text Text to display.
+ */
+void informationDisplay_display(const String &text)
 {
     lcd.print(text);
-}
-
-/****
- * @brief Displays luminosity on the LCD.
- *
- * @param fLuminosityValue Luminosity value to display (in lux).
- ****/
-void informationDisplay::displayLuminosity(float fLuminosityValue)
-{
-    this->display(fLuminosityValue);
-    this->display(" lux");
 }
 
 /****
@@ -77,10 +98,15 @@ void informationDisplay::displayLuminosity(float fLuminosityValue)
  *
  * @param fTemperatureValue Temperature value to display (in °C).
  ****/
-void informationDisplay::displayTemperature(float fTemperatureValue)
+/**
+ * @brief Displays temperature on the LCD.
+ *
+ * @param fTemperatureValue Temperature value to display (in °C).
+ */
+void informationDisplay_displayTemperature(float fTemperatureValue)
 {
-    this->display(fTemperatureValue);
-    this->display(" C");
+    informationDisplay_display(fTemperatureValue);
+    informationDisplay_display(" C");
 }
 
 /****
@@ -88,10 +114,15 @@ void informationDisplay::displayTemperature(float fTemperatureValue)
  *
  * @param fHumidityValue Humidity value to display (in %).
  ****/
-void informationDisplay::displayHumidity(float fHumidityValue)
+/**
+ * @brief Displays humidity on the LCD.
+ *
+ * @param fHumidityValue Humidity value to display (in %).
+ */
+void informationDisplay_displayHumidity(float fHumidityValue)
 {
-    this->display(fHumidityValue);
-    this->display(" %");
+    informationDisplay_display(fHumidityValue);
+    informationDisplay_display(" %");
 }
 
 /****
@@ -99,10 +130,15 @@ void informationDisplay::displayHumidity(float fHumidityValue)
  *
  * @param fPressureValue Pressure value to display (in hPa).
  ****/
-void informationDisplay::displayPressure(float fPressureValue)
+/**
+ * @brief Displays pressure on the LCD.
+ *
+ * @param fPressureValue Pressure value to display (in hPa).
+ */
+void informationDisplay_displayPressure(float fPressureValue)
 {
-    this->display(fPressureValue);
-    this->display(" hPa");
+    informationDisplay_display(fPressureValue);
+    informationDisplay_display(" hPa");
 }
 
 /****
@@ -110,10 +146,31 @@ void informationDisplay::displayPressure(float fPressureValue)
  *
  * @param fIAQValue IAQ value to display.
  ****/
-void informationDisplay::displayGas(float fIAQValue)
+/**
+ * @brief Displays air quality index (IAQ) on the LCD.
+ *
+ * @param fIAQValue IAQ value to display.
+ */
+void informationDisplay_displayGas(float fIAQValue)
 {
-    this->display("IAQ: ");
-    this->display(fIAQValue);
+    informationDisplay_display("IAQ: ");
+    informationDisplay_display(fIAQValue);
+}
+
+/****
+ * @brief Displays luminosity on the LCD.
+ *
+ * @param fLuminosityValue Luminosity value to display (in lux).
+ ****/
+/**
+ * @brief Displays luminosity on the LCD.
+ *
+ * @param fLuminosityValue Luminosity value to display (in lux).
+ */
+void informationDisplay_displayLuminosity(float fLuminosityValue)
+{
+    informationDisplay_display(fLuminosityValue);
+    informationDisplay_display(" Lux");
 }
 
 const int DisplayInformationRollingIndexMax = 2;
@@ -122,31 +179,37 @@ int DisplayInformationRollingIndex = 0;
 /****
  * @brief Cyclically displays different sensor measurements on the LCD.
  *
- * Displays temperature and humidity, then pressure, then IAQ according to the rolling index.
+ * Displays luminosity,temperature ,humidity, pressure and IAQ according to the rolling index.
  *
- * @param fTemperatureValue Temperature to display.
- * @param fHumidityValue Humidity to display.
- * @param fPressureValue Pressure to display.
- * @param fIAQValue Air quality index to display.
+ * @param fSensorValue Array containing sensor values.
  ****/
-void informationDisplay::displaySensor(float fTemperatureValue, float fHumidityValue, float fPressureValue, float fIAQValue)
+/**
+ * @brief Cyclically displays different sensor measurements on the LCD.
+ *
+ * Displays temperature, humidity, luminosity, pressure, and IAQ according to the rolling index.
+ *
+ * @param fSensorValue Array containing sensor values.
+ */
+void informationDisplay_displaySensor(float fSensorValue[5])
 {
 
     switch (DisplayInformationRollingIndex)
     {
     case 0:
-        setCursor(0, 1);
-        displayTemperature(fTemperatureValue);
-        setCursor(8, 1);
-        displayHumidity(fHumidityValue);
+        informationDisplay_setCursor(0, 1);
+        informationDisplay_displayTemperature(fSensorValue[0]);
+        informationDisplay_setCursor(8, 1);
+        informationDisplay_displayHumidity(fSensorValue[1]);
         break;
     case 1:
-        setCursor(0, 1);
-        displayPressure(fPressureValue);
+        informationDisplay_setCursor(0, 1);
+        informationDisplay_displayLuminosity(fSensorValue[2]);
+        informationDisplay_setCursor(8, 1);
+        informationDisplay_displayPressure(fSensorValue[3]);
         break;
     case 2:
-        setCursor(0, 1);
-        displayGas(fIAQValue);
+        informationDisplay_setCursor(0, 1);
+        informationDisplay_displayGas(fSensorValue[4]);
         break;
     }
 
@@ -159,6 +222,68 @@ void informationDisplay::displaySensor(float fTemperatureValue, float fHumidityV
         DisplayInformationRollingIndex++;
     }
 }
+
+/**
+ * @brief Displays the main information or status on the LCD.
+ *
+ * Alternates between a welcome message and the current WiFi/MQTT status.
+ */
+void informationDisplay_displayMainInformation(void)
+{
+    if(iDisplayNameCounter<4)
+    {
+        informationDisplay_setCursor(0, 0);
+        informationDisplay_display("The Multisensor");
+        iDisplayNameCounter++;
+    }
+    else
+    {
+        iWiFiStatus = WiFiManagement_getWiFiStatus();
+        iMqttStatus = MQTTManagement_getMQTTStatus();
+
+        informationDisplay_setCursor(0, 0);
+        informationDisplay_displayStatus(WIFI, iWiFiStatus);
+        informationDisplay_setCursor(8, 0);
+        informationDisplay_displayStatus(MQTT, iMqttStatus);
+
+        iDisplayNameCounter = 0;
+    }
+}
+
+/**
+ * @brief Displays the connection status for WiFi or MQTT on the LCD.
+ *
+ * @param itypeStatus The type of connection (WIFI or MQTT).
+ * @param iStatus The status code (implementation-specific: 3=WiFi OK, 0=MQTT OK, else NOK).
+ */
+void informationDisplay_displayStatus(eConnexionStatusType itypeStatus, int iStatus)
+{
+    if(itypeStatus == WIFI)
+    {
+        informationDisplay_display("WiFi");
+        if(iStatus == 3)
+        {
+            informationDisplay_display(" OK");
+        }
+        else
+        {
+            informationDisplay_display(" NOK");
+        }
+    }
+    else if(itypeStatus == MQTT)
+    {
+        informationDisplay_display("MQTT");
+        if(iStatus == 0)
+        {
+            informationDisplay_display(" OK");
+        }
+        else
+        {
+            informationDisplay_display(" NOK");
+        }
+    }
+}
+
 /****
  * END OF FILE
  ****/

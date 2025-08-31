@@ -2,28 +2,28 @@
 #define INFORMATION_DISPLAY_H
 
 #include <LiquidCrystal_I2C.h>
+#include "wirelessManagement/WiFiManagement.h"
+#include "wirelessManagement/MQTTManagement.h"
 
-class informationDisplay
-{
-public:
-    informationDisplay();
-    void begin();
-    void clear();
-    void setCursor(int col, int row);
+#include "projectDefs.h"
 
-    void display(int value);
-    void display(const String &text);
+void informationDisplay_begin();
+void informationDisplay_clear();
+void informationDisplay_setCursor(int col, int row);
 
-    void displayLuminosity(float fLuminosityValue);
-    void displayTemperature(float fTemperatureValue);
-    void displayHumidity(float fHumidityValue);
-    void displayPressure(float fPresureValue);
-    void displayGas(float GasValue);
+void informationDisplay_display(int value);
+void informationDisplay_display(const String &text);
 
-    void displaySensor(float fTemperatureValue, float fHumidityValue, float fPresureValue, float fIAQValue);
+void informationDisplay_displayTemperature(float fTemperatureValue);
+void informationDisplay_displayHumidity(float fHumidityValue);
+void informationDisplay_displayPressure(float fPresureValue);
+void informationDisplay_displayGas(float GasValue);
+void informationDisplay_displayLuminosity(float fLuminosityValue);
 
-private:
-    LiquidCrystal_I2C lcd;
-};
+void informationDisplay_displaySensor(float fSensorValue[5]);
 
-#endif
+void informationDisplay_displayMainInformation(void);
+
+void informationDisplay_displayStatus(eConnexionStatusType itypeStatus, int iStatus);
+
+#endif // INFORMATION_DISPLAY_H

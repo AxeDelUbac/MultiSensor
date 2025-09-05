@@ -80,7 +80,8 @@ float environmentalSensor_IAQManagement(float fResistance)
 float environmentalSensor_readTemperatureValue(void)
 {
     fLastValueTemperature = bme.readTemperature();
-    fAverageTemperature = sensorManagement_movingAverage(fTemperatureValueBuffer, fLastValueTemperature);
+    float filteredValue = sensorManagement_hampelFilter(fTemperatureValueBuffer, MOVING_AVERAGE_BUFFER_SIZE, fLastValueTemperature, 2.0);
+    fAverageTemperature = sensorManagement_movingAverage(fTemperatureValueBuffer, filteredValue);
     sensorManagement_isTresholdReached(TEMPERATURE, fAverageTemperature, fTemperatureTreshold);
     return fAverageTemperature;
 }
@@ -133,6 +134,43 @@ float environmentalSensor_readGasValue(void)
     fAverageIAQ = environmentalSensor_IAQManagement(fAverageGasResistance);
     sensorManagement_isTresholdReached(IAQ, fAverageIAQ, fIAQTreshold);
     return fAverageIAQ;
+}
+
+/**
+ * @brief Reads the raw temperature value from the BME680 sensor.
+ * @return Raw temperature (in degrees Celsius).
+ */
+float environmentalSensor_readRawTemperature(void)
+{
+    return bme.readTemperature();
+}
+
+/**
+ * @brief Reads the raw humidity value from the BME680 sensor.
+ * @return Raw relative humidity (in percent).
+ */
+float environmentalSensor_readRawHumidity(void)
+{
+    return bme.readHumidity();
+}
+
+/**
+ * @brief Reads the raw pressure value from the BME680 sensor.
+ * @return Raw atmospheric pressure (in hPa).
+ */
+float environmentalSensor_readRawPressure(void)
+{
+    return bme.readPressure() / 100.0f; // Convert Pa to hPa
+}
+
+/**
+ * @brief Reads the raw gas resistance value from the BME680 sensor.
+ * @return Raw gas resistance (in Ohms).
+ */
+float environmentalSensor_readRawGas(void)
+{
+    float fRawGas = bme.readGas();
+    return environmentalSensor_IAQManagement(fRawGas);
 }
 
 /****

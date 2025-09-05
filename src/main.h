@@ -34,5 +34,6 @@ void displayInformationTask(void *pvParameters);
 
 const int iSizeSensorValueBuffer = 5;
 float fRetrieveSensorValueBuffer[iSizeSensorValueBuffer] = {0};
+float fRetrieveRawSensorValue[iSizeSensorValueBuffer] = {0};
 
 #endif // MAIN_H

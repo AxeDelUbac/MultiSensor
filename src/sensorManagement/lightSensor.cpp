@@ -46,6 +46,15 @@ float lightSensor_readLuminosityValue(void)
     return fAverageLuminosity;
 }
 
+/**
+ * @brief Reads the raw luminosity value from the BH1750 sensor.
+ * @return Raw luminosity (in lux).
+ */
+float lightSensor_readRawLuminosity(void)
+{
+    return bh1750.readLightLevel();
+}
+
 /****
  * END OF FILE
  ****/

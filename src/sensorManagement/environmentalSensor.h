@@ -17,4 +17,9 @@ float environmentalSensor_readHumidityValue(void);
 float environmentalSensor_readPressureValue(void);
 float environmentalSensor_readGasValue(void);
 
+float environmentalSensor_readRawTemperature(void);
+float environmentalSensor_readRawHumidity(void);
+float environmentalSensor_readRawPressure(void);
+float environmentalSensor_readRawGas(void);
+
 #endif // ENVIRONMENTAL_SENSOR_H

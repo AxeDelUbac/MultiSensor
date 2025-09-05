@@ -47,15 +47,15 @@ void MQTTManagement_brokerConnection(void)
  * @param cSerialisedData Buffer to store the serialized JSON string.
  * @param cSerialisedDataBufferSize Size of the buffer.
  */
-void MQTTManagement_jsonDataSerialisation(char *cSerialisedData, size_t cSerialisedDataBufferSize)
+void MQTTManagement_jsonDataSerialisation(float fSerializedBufferSensorValue[], char *cSerialisedData, size_t cSerialisedDataBufferSize)
 {
   JsonDocument oJsonData;
 
-  oJsonData["temperature"] = fRetrieveSensorValueBuffer[0];
-  oJsonData["humidity"] = fRetrieveSensorValueBuffer[1];
-  oJsonData["pressure"] = fRetrieveSensorValueBuffer[2];
-  oJsonData["IndoorAirQuality"] = fRetrieveSensorValueBuffer[3];
-  oJsonData["luminosity"] = fRetrieveSensorValueBuffer[4];
+  oJsonData["temperature"] = fSerializedBufferSensorValue[0];
+  oJsonData["humidity"] = fSerializedBufferSensorValue[1];
+  oJsonData["pressure"] = fSerializedBufferSensorValue[2];
+  oJsonData["IndoorAirQuality"] = fSerializedBufferSensorValue[3];
+  oJsonData["luminosity"] = fSerializedBufferSensorValue[4];
 
   serializeJson(oJsonData, cSerialisedData, cSerialisedDataBufferSize);
 }
@@ -87,7 +87,7 @@ void MQTTManagement_jsonThresholdDataSerialisation(eSensorType sensorType, float
  *
  * @note Calls MQTTManagement_brokerConnection if not already connected.
  */
-void MQTTManagement_sendSerialisedData(void)
+void MQTTManagement_sendSerialisedData(float fRetrieveSensorValueBuffer[], const char* cMqttTopic)
 {
   if (!client.connected())
   {
@@ -96,9 +96,9 @@ void MQTTManagement_sendSerialisedData(void)
 
   client.loop();
 
-  MQTTManagement_jsonDataSerialisation(cSerialisedData, sizeof(cSerialisedData));
+  MQTTManagement_jsonDataSerialisation(fRetrieveSensorValueBuffer, cSerialisedData, sizeof(cSerialisedData));
 
-  client.publish("Multisensor", cSerialisedData);
+  client.publish(cMqttTopic, cSerialisedData);
 
   // Serial.print("MQTT Messages sent: ");
   // Serial.println(cSerialisedData);

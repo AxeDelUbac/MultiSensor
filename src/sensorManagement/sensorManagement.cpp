@@ -13,7 +13,9 @@
  * @brief Calculates the moving average on a buffer and adds a new value.
  *
  * Shifts the values in the buffer, inserts the new value at the head,
- * and then calculates the average of the values present in the buffer.
+ * and then calculates the average using only the non-null values present in the buffer.
+ * This ensures that, at startup, the average is computed based on the actual number of valid values,
+ * even if the buffer is not yet fully filled.
  *
  * @param fSensorBuffer Pointer to the buffer of float values.
  * @param fNewValue New value to insert into the buffer.
@@ -22,6 +24,7 @@
 float sensorManagement_movingAverage(float *fSensorBuffer, float fNewValue)
 {
     float AverageValue = 0;
+    int iNumberOfZerosValues = 0;
 
     for (int iBcl = MOVING_AVERAGE_BUFFER_SIZE - 1; iBcl > 0; iBcl--)
     {
@@ -31,11 +34,60 @@ float sensorManagement_movingAverage(float *fSensorBuffer, float fNewValue)
 
     for (int iBcl = 0; iBcl < MOVING_AVERAGE_BUFFER_SIZE; iBcl++)
     {
-        AverageValue = AverageValue + fSensorBuffer[iBcl];
+        if(fSensorBuffer[iBcl] != 0.0)
+        {
+            AverageValue = AverageValue + fSensorBuffer[iBcl];
+        }
+        else
+        {
+            // if the value is zero, it means the buffer is not yet full
+            iNumberOfZerosValues++;
+        }
     }
 
-    AverageValue = AverageValue / MOVING_AVERAGE_BUFFER_SIZE;
+    // Calculate average only on non-zero values
+    AverageValue = AverageValue / (MOVING_AVERAGE_BUFFER_SIZE - iNumberOfZerosValues);
     return AverageValue;
+}
+
+float sensorManagement_hampelFilter(float *fHampelSensorBuffer, int fHampelBufferSize, float fBufferNewValue, float threshold)
+{
+    // Copie le buffer + nouvelle valeur
+    float temp[fHampelBufferSize + 1];
+    for (int i = 0; i < fHampelBufferSize; i++)
+    {
+        temp[i] = fHampelSensorBuffer[i];
+    }
+    temp[fHampelBufferSize] = fBufferNewValue;
+
+    // Calcule la médiane
+    float fmedian;
+    for (int i = 1; i < fHampelBufferSize + 1; i++) {
+        float key = temp[i];
+        int j = i - 1;
+        while (j >= 0 && temp[j] > key) {
+            temp[j + 1] = temp[j];
+            j--;
+        }
+        temp[j + 1] = key;
+    }
+
+    if (fHampelBufferSize % 2 == 0)
+        fmedian = (temp[fHampelBufferSize / 2 - 1] + temp[fHampelBufferSize / 2]) / 2.0f;
+    else
+        fmedian = temp[fHampelBufferSize / 2];
+    
+    // Calcule la MAD
+    float dev[fHampelBufferSize + 1];
+    for (int i = 0; i < fHampelBufferSize + 1; i++) dev[i] = fabs(temp[i] - fmedian);
+    std::sort(dev, dev + fHampelBufferSize + 1);
+    float fMedianAbsoluteDeviation = dev[(fHampelBufferSize + 1) / 2];
+
+    // Si la nouvelle valeur est trop éloignée, remplace par la médiane
+    if (fMedianAbsoluteDeviation > 0 && fabs(fBufferNewValue - fmedian) > threshold * fMedianAbsoluteDeviation)
+        return fmedian;
+    else
+        return fBufferNewValue;
 }
 
 /**

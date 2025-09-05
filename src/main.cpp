@@ -91,11 +91,20 @@ void SensorTask(void *pvParameters)
 
   for (;;)
   {
+    // Read filtered sensor values and update the global buffer
     fRetrieveSensorValueBuffer[0] = environmentalSensor_readTemperatureValue();
     fRetrieveSensorValueBuffer[1] = environmentalSensor_readHumidityValue();
     fRetrieveSensorValueBuffer[2] = environmentalSensor_readPressureValue();
     fRetrieveSensorValueBuffer[3] = environmentalSensor_readGasValue();
     fRetrieveSensorValueBuffer[4] = lightSensor_readLuminosityValue();
+
+    // Read raw sensor values to compare and improve with the filtered ones
+    fRetrieveRawSensorValue[0] = environmentalSensor_readRawTemperature();
+    fRetrieveRawSensorValue[1] = environmentalSensor_readRawHumidity();
+    fRetrieveRawSensorValue[2] = environmentalSensor_readRawPressure();
+    fRetrieveRawSensorValue[3] = environmentalSensor_readRawGas();
+    fRetrieveRawSensorValue[4] = lightSensor_readRawLuminosity();
+    MQTTManagement_sendSerialisedData(fRetrieveRawSensorValue, "Multisensor/Raw Values");
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -117,6 +126,7 @@ void WiFiTask(void *parameter)
   {
 
     WiFiManagement_networkConnection();
+    
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -137,7 +147,7 @@ void MQTTTask(void *parameter)
   for (;;)
   {
 
-    MQTTManagement_sendSerialisedData();
+    MQTTManagement_sendSerialisedData(fRetrieveSensorValueBuffer, "Multisensor");
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }

@@ -12,4 +12,6 @@ void lightSensor_begin(void);
 
 float lightSensor_readLuminosityValue(void);
 
+float lightSensor_readRawLuminosity(void);
+
 #endif // LIGHT_SENSOR_H

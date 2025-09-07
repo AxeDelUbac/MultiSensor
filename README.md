@@ -45,9 +45,9 @@ You can also view or edit the PlantUML source directly: `architecture.puml`.
   - from the `BH1750` I2C sensor
     - Luminosity (lux)
 
-- Uses a moving-average filter with a window of 6 samples (each sample taken every 5 minutes). The moving average therefore covers ~30 minutes and smooths short-term fluctuations for display, threshold checks and publishing.
+- Uses a moving-average filter with a window of 6 samples (each sample taken every 5 minutes). At startup, the moving average is calculated only on the non-zero values present in the buffer, ensuring accurate averaging even before the buffer is fully filled.
 
-- Publishes sensor measurements and status to a remote MQTT broker as JSON. Measurements are published every 30 minutes on the topic `Multisensor`, enabling logging, dashboards and automation systems to consume the data.
+- Publishes sensor measurements and status to a remote MQTT broker as JSON. Measurements are published every 5 minutes on the topic `Multisensor`, enabling logging, dashboards and automation systems to consume the data.
 
 - Detects abnormal values using configurable thresholds and issues alerts when measurements exceed these limits. Alerts are published to the MQTT broker on the topic `Multisensor/threshold/name of the physical value`
 
@@ -58,7 +58,7 @@ You can also view or edit the PlantUML source directly: `architecture.puml`.
 
 - Solar & Battery improvements: implement a solar charge controller strategy
 
-- New sensors: plan to add wind speed and direction sensors (anemometer + wind vane) and lightning/impact detection modules to extend environmental monitoring.
+- New sensors: plan to add wind speed and direction sensors (anemometer + wind vane), lightning/impact detection modules or UV detector to extend environmental monitoring.
 
 - Threshold alert delivery change: threshold breaches will be batched and published together with the periodic data publication (every 30 minutes) instead of being sent immediately as asynchronous messages.
 

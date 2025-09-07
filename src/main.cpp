@@ -11,8 +11,6 @@ void setup()
   Serial.begin(115200);
   Wire.begin(6, 7);
 
-  Serial.println("Scan complete.");
-
   environmentalSensor_begin();
   lightSensor_begin();
   informationDisplay_begin();
@@ -104,7 +102,6 @@ void SensorTask(void *pvParameters)
     fRetrieveRawSensorValue[2] = environmentalSensor_readRawPressure();
     fRetrieveRawSensorValue[3] = environmentalSensor_readRawGas();
     fRetrieveRawSensorValue[4] = lightSensor_readRawLuminosity();
-    MQTTManagement_sendSerialisedData(fRetrieveRawSensorValue, "Multisensor/Raw Values");
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -135,19 +132,20 @@ void WiFiTask(void *parameter)
 /**
  * @brief Task for sending sensor data via MQTT.
  *
- * Serializes and publishes sensor data to the MQTT broker every 30 minutes (1800 seconds).
+ * Serializes and publishes sensor data to the MQTT broker every 5 minutes (300 seconds).
  *
  * @param parameter Unused FreeRTOS task parameter.
  */
 void MQTTTask(void *parameter)
 {
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t xFrequency = pdMS_TO_TICKS(1800000);
+  const TickType_t xFrequency = pdMS_TO_TICKS(300000);
 
   for (;;)
   {
 
     MQTTManagement_sendSerialisedData(fRetrieveSensorValueBuffer, "Multisensor");
+    MQTTManagement_sendSerialisedData(fRetrieveRawSensorValue, "Multisensor/Raw Values");
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }

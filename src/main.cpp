@@ -25,16 +25,19 @@ void setup()
  */
 void taskCreation(void)
 {
+  xSensorSemaphore = xSemaphoreCreateBinary();
+  xSensorDataQueue = xQueueCreate(5, sizeof(tSensorValueBuffer));
+
   xTaskCreate(
-      WiFiTask, "TaskWiFi", 4096, NULL, 1, NULL);
+      WiFiTask, "TaskWiFi", 4096, NULL, 3, NULL);
   xTaskCreate(
-      MQTTTask, "TaskMQTT", 4096, NULL, 1, NULL);
+      MQTTTask, "TaskMQTT", 4096, NULL, 3, NULL);
   xTaskCreate(
-      SensorTask, "SensorTask", 4096, NULL, 1, NULL);
+      SensorTask, "SensorTask", 4096, NULL, 4, NULL);
   xTaskCreate(
       DebugTask, "DebugTask", 4096, NULL, 1, NULL);
   xTaskCreate(
-      displayInformationTask, "DisplayInformationTask", 4096, NULL, 1, NULL);
+      displayInformationTask, "DisplayInformationTask", 4096, NULL, 2, NULL);
 }
 
 /**
@@ -60,15 +63,15 @@ void DebugTask(void *pvParameters)
   {
 
     Serial.print("Temperature: ");
-    Serial.print(fRetrieveSensorValueBuffer[0]);
+    Serial.print(tSensorValueBuffer.filtered[0]);
     Serial.print(" C, Humidity: ");
-    Serial.print(fRetrieveSensorValueBuffer[1]);
+    Serial.print(tSensorValueBuffer.filtered[1]);
     Serial.print(" Pressure: ");
-    Serial.print(fRetrieveSensorValueBuffer[2]);
+    Serial.print(tSensorValueBuffer.filtered[2]);
     Serial.print(" hPa, IAQ : ");
-    Serial.print(fRetrieveSensorValueBuffer[3]);
+    Serial.print(tSensorValueBuffer.filtered[3]);
     Serial.print(" ,Light: ");
-    Serial.print(fRetrieveSensorValueBuffer[4]);
+    Serial.print(tSensorValueBuffer.filtered[4]);
     Serial.print(" Lux");
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
@@ -90,18 +93,21 @@ void SensorTask(void *pvParameters)
   for (;;)
   {
     // Read filtered sensor values and update the global buffer
-    fRetrieveSensorValueBuffer[0] = environmentalSensor_readTemperatureValue();
-    fRetrieveSensorValueBuffer[1] = environmentalSensor_readHumidityValue();
-    fRetrieveSensorValueBuffer[2] = environmentalSensor_readPressureValue();
-    fRetrieveSensorValueBuffer[3] = environmentalSensor_readGasValue();
-    fRetrieveSensorValueBuffer[4] = lightSensor_readLuminosityValue();
+    tSensorValueBuffer.filtered[0] = environmentalSensor_readTemperatureValue();
+    tSensorValueBuffer.filtered[1] = environmentalSensor_readHumidityValue();
+    tSensorValueBuffer.filtered[2] = environmentalSensor_readPressureValue();
+    tSensorValueBuffer.filtered[3] = environmentalSensor_readGasValue();
+    tSensorValueBuffer.filtered[4] = lightSensor_readLuminosityValue();
 
     // Read raw sensor values to compare and improve with the filtered ones
-    fRetrieveRawSensorValue[0] = environmentalSensor_readRawTemperature();
-    fRetrieveRawSensorValue[1] = environmentalSensor_readRawHumidity();
-    fRetrieveRawSensorValue[2] = environmentalSensor_readRawPressure();
-    fRetrieveRawSensorValue[3] = environmentalSensor_readRawGas();
-    fRetrieveRawSensorValue[4] = lightSensor_readRawLuminosity();
+    tSensorValueBuffer.raw[0] = environmentalSensor_readRawTemperature();
+    tSensorValueBuffer.raw[1] = environmentalSensor_readRawHumidity();
+    tSensorValueBuffer.raw[2] = environmentalSensor_readRawPressure();
+    tSensorValueBuffer.raw[3] = environmentalSensor_readRawGas();
+    tSensorValueBuffer.raw[4] = lightSensor_readRawLuminosity();
+
+    xQueueSend(xSensorDataQueue, &tSensorValueBuffer, portMAX_DELAY);
+    xSemaphoreGive(xSensorSemaphore);
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -121,9 +127,7 @@ void WiFiTask(void *parameter)
 
   for (;;)
   {
-
     WiFiManagement_networkConnection();
-    
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -143,11 +147,11 @@ void MQTTTask(void *parameter)
 
   for (;;)
   {
-
-    MQTTManagement_sendSerialisedData(fRetrieveSensorValueBuffer, "Multisensor");
-    MQTTManagement_sendSerialisedData(fRetrieveRawSensorValue, "Multisensor/Raw Values");
-
-    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    if (xSemaphoreTake(xSensorSemaphore, portMAX_DELAY) == pdTRUE)
+    {
+      MQTTManagement_sendSerialisedData(tSensorValueBuffer.filtered, "Multisensor");
+      MQTTManagement_sendSerialisedData(tSensorValueBuffer.raw, "Multisensor/Raw Values");
+    }
   }
 }
 
@@ -165,12 +169,9 @@ void displayInformationTask(void *parameter)
 
   for (;;)
   {
-
     informationDisplay_clear();
-
     informationDisplay_displayMainInformation();
-
-    informationDisplay_displaySensor(fRetrieveSensorValueBuffer);
+    informationDisplay_displaySensor(tSensorValueBuffer.filtered);
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }

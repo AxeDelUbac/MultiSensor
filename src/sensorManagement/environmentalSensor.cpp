@@ -80,7 +80,7 @@ float environmentalSensor_IAQManagement(float fResistance)
 float environmentalSensor_readTemperatureValue(void)
 {
     fLastValueTemperature = bme.readTemperature();
-    float filteredValue = sensorManagement_hampelFilter(fTemperatureValueBuffer, MOVING_AVERAGE_BUFFER_SIZE, fLastValueTemperature, 2.0);
+    float filteredValue = sensorManagement_hampelFilter(fTemperatureValueBuffer, MOVING_AVERAGE_BUFFER_SIZE, fLastValueTemperature, 3.0);
     fAverageTemperature = sensorManagement_movingAverage(fTemperatureValueBuffer, filteredValue);
     sensorManagement_isTresholdReached(TEMPERATURE, fAverageTemperature, fTemperatureTreshold);
     return fAverageTemperature;

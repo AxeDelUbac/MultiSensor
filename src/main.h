@@ -33,7 +33,15 @@ void DebugTask(void *pvParameters);
 void displayInformationTask(void *pvParameters);
 
 const int iSizeSensorValueBuffer = 5;
-float fRetrieveSensorValueBuffer[iSizeSensorValueBuffer] = {0};
-float fRetrieveRawSensorValue[iSizeSensorValueBuffer] = {0};
+
+typedef struct {
+    float filtered[iSizeSensorValueBuffer]= {0};
+    float raw[iSizeSensorValueBuffer]= {0};
+} SensorData_t;
+
+SemaphoreHandle_t xSensorSemaphore;
+QueueHandle_t xSensorDataQueue;
+
+SensorData_t tSensorValueBuffer;
 
 #endif // MAIN_H
